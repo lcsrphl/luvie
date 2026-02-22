@@ -9,11 +9,20 @@ export function navigate(path) {
 }
 
 export function startRouter() {
+  const mount = document.getElementById("app"); // 👈 onde as telas serão renderizadas
+
   function handle() {
     const path = window.location.hash.replace("#", "") || "/";
     const render = routes.get(path) || routes.get("/");
-    render();
+
+    if (!render) {
+      console.error("Rota não encontrada:", path);
+      return;
+    }
+
+    render(mount); // 👈 passa o mount pra tela
   }
+
   window.addEventListener("hashchange", handle);
   handle();
 }
