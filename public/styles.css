@@ -102,8 +102,8 @@ body{
   display:flex;
   justify-content:center;
 }
+/* mantém o estilo do botão */
 .cta{
-  width: min(360px, 100%);
   border: 2px solid var(--accent);
   background:#fff;
   color: var(--accent);
@@ -115,20 +115,23 @@ body{
   cursor:pointer;
 }
 
-.cta-fixed{
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(var(--nav-h) + 12px + var(--safe-bottom));
-  z-index: 2000;
+/* versão fixa (sobrescreve tudo de layout) */
+.cta.cta-fixed{
+  position: fixed !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
 
-  width: calc(100% - 28px);
-  max-width: 520px;
-  height: var(--cta-h);
+  bottom: calc(var(--nav-h) + 14px + var(--safe-bottom)) !important;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: calc(100% - 28px) !important;
+  max-width: 520px !important;
+  height: var(--cta-h) !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  z-index: 9999 !important;
 }
 
 .nav{
