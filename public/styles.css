@@ -7,6 +7,9 @@
   --accent:#c2185b;
   --radius:16px;
   --shadow: 0 6px 18px rgba(0,0,0,.06);
+  --nav-h: 70px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --cta-h: 52px;
 }
 
 *{ box-sizing:border-box; }
@@ -19,7 +22,7 @@ body{
 
 .screen{
   min-height:100vh;
-  padding: 16px 14px 90px;
+  padding: 16px 14px calc(var(--nav-h) + var(--cta-h) + 32px + var(--safe-bottom));
   max-width: 520px;
   margin: 0 auto;
 }
@@ -110,6 +113,16 @@ body{
   font-weight: 900;
   box-shadow: var(--shadow);
   cursor:pointer;
+}
+
+.cta-fixed{
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--nav-h) + 12px + var(--safe-bottom));
+  height: var(--cta-h);
+  width: auto; /* sobrescreve o min(360px,100%) */
+  z-index: 1100;
 }
 
 .nav{
