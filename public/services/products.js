@@ -1,4 +1,4 @@
-import { db, storage } from "./firebase.js";
+import { db, storage } from "../firebase.js";
 import {
   collection, addDoc, updateDoc, doc,
   query, orderBy, onSnapshot, serverTimestamp
