@@ -117,14 +117,18 @@ body{
 
 .cta-fixed{
   position: fixed;
-  left: 14px;
-  right: 14px;
-  bottom: calc(70px + 12px + env(safe-area-inset-bottom, 0px));
-  height: 52px;
-  width: auto;           /* 🔑 IMPORTANTE */
-  max-width: 520px;      /* mantém alinhado com seu layout */
-  margin: 0 auto;        /* centraliza */
-  z-index: 2000;         /* acima da navbar */
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--nav-h) + 12px + var(--safe-bottom));
+  z-index: 2000;
+
+  width: calc(100% - 28px);
+  max-width: 520px;
+  height: var(--cta-h);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav{
