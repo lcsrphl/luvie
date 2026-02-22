@@ -7,9 +7,9 @@ const firebaseConfig = {
 apiKey: "AIzaSyBG5APhYUjDK8yG5u8JT_0A7fcsyYALEu0",
 authDomain: "luvie-app-2026.firebaseapp.com",
 projectId: "luvie-app-2026",
-storageBucket: "luvie-app-2026. firebasestorage.app",
+storageBucket: "luvie-app-2026.firebasestorage.app",
 messagingSenderId: "520070032005",
-appId: "1:520070032005:web: a5e558440d7680e7d6d7ec"
+appId: "1:520070032005:web:a5e558440d7680e7d6d7ec"
 };
 
 export const app = initializeApp(firebaseConfig);
