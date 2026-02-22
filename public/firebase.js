@@ -1,3 +1,5 @@
+console.log("firebase.js carregou");
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 console.log("BUCKET:", app.options.storageBucket);
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
