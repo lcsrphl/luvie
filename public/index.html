@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Luviê Vendas</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="header">
+    <h1>Selecione os produtos</h1>
+    <p class="sub">Toque para adicionar ao carrinho</p>
+  </header>
+
+  <main class="container">
+    <section id="grid" class="grid" aria-label="Lista de produtos"></section>
+  </main>
+
+  <footer class="bottom">
+    <div class="summary">
+      <div>
+        <div class="summary-line">
+          <span id="itemsCount">0 itens</span>
+          <span class="dot">•</span>
+          <span id="totalValue">R$ 0,00</span>
+        </div>
+        <div class="hint" id="hint">Selecione pelo menos 1 produto</div>
+      </div>
+      <button id="btnNext" class="btn" disabled>
+        Selecionar cliente
+      </button>
+    </div>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "p1",
+    "title": "Blazer Zara",
+    "price": 15000,
+    "photoUrl": "https://via.placeholder.com/600x600.png?text=Blazer"
+  },
+  {
+    "id": "p2",
+    "title": "Vestido Midi",
+    "price": 12000,
+    "photoUrl": "https://via.placeholder.com/600x600.png?text=Vestido"
+  },
+  {
+    "id": "p3",
+    "title": "Calça Alfaiataria",
+    "price": 9900,
+    "photoUrl": "https://via.placeholder.com/600x600.png?text=Calca"
+  }
+]
