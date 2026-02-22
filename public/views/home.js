@@ -20,11 +20,9 @@ export function renderHome(mount) {
           </div>
         </button>
       </section>
-
-      <div class="cta-wrap">
-        <button class="cta" id="btnNovoPedido" type="button">Novo Pedido</button>
-      </div>
     </main>
+
+    <button class="cta cta-fixed" id="btnNovoPedido" type="button">Novo Pedido</button>
 
     <nav class="nav">
       <div class="nav-inner">
