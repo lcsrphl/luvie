@@ -1,5 +1,6 @@
 import { navigate } from "../router.js";
 import { subscribeProducts } from "../services/products.js";
+import { getSelectedProducts, toggleSelectedProduct, setSelectedProducts } from "../store.js";
 
 let unsubscribe = null;
 
@@ -34,7 +35,14 @@ export function renderHome(mount) {
   `;
 
   mount.querySelector("#btnNovoProduto").addEventListener("click", () => navigate("/novo-produto"));
-  mount.querySelector("#btnNovoPedido").addEventListener("click", () => alert("Depois: fluxo de pedido"));
+  mount.querySelector("#btnNovoPedido").addEventListener("click", () => {
+  const ids = getSelectedProducts();
+  if (!ids.length) {
+    alert("Selecione pelo menos 1 produto antes de criar o pedido.");
+    return;
+  }
+  navigate("/clientes");
+});
 
   const grid = mount.querySelector("#grid");
 
@@ -42,28 +50,34 @@ export function renderHome(mount) {
   if (unsubscribe) unsubscribe();
 
   unsubscribe = subscribeProducts((produtos) => {
-    // mantém o card Novo Produto sempre no topo
-    const firstCard = grid.firstElementChild;
-    grid.innerHTML = "";
-    grid.appendChild(firstCard);
+  const firstCard = grid.firstElementChild;
+  grid.innerHTML = "";
+  grid.appendChild(firstCard);
 
-    produtos.forEach(p => {
-      const card = document.createElement("button");
-      card.className = "card";
-      card.type = "button";
-      card.innerHTML = `
-        <div class="thumb">
-          ${p.fotoUrl ? `<img src="${p.fotoUrl}" alt="${p.titulo}">` : `<div class="plus">?</div>`}
-        </div>
-        <div class="meta">
-          <p class="name">${escapeHtml(p.titulo || "")}</p>
-          <p class="price">R$ ${formatBRL(p.preco)}</p>
-        </div>
-      `;
-      card.addEventListener("click", () => alert(`Produto: ${p.titulo}`));
-      grid.appendChild(card);
+  const selected = new Set(getSelectedProducts());
+
+  produtos.forEach(p => {
+    const card = document.createElement("button");
+    card.className = "card" + (selected.has(p.id) ? " selected" : "");
+    card.type = "button";
+    card.innerHTML = `
+      <div class="thumb">
+        ${p.fotoUrl ? `<img src="${p.fotoUrl}" alt="${p.titulo}">` : `<div class="plus">?</div>`}
+      </div>
+      <div class="meta">
+        <p class="name">${escapeHtml(p.titulo || "")}</p>
+        <p class="price">R$ ${formatBRL(p.preco)}</p>
+      </div>
+    `;
+
+    card.addEventListener("click", () => {
+      const ids = toggleSelectedProduct(p.id);
+      card.classList.toggle("selected", ids.includes(p.id));
     });
+
+    grid.appendChild(card);
   });
+});
 }
 
 function formatBRL(value){
