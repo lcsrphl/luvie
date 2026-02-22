@@ -217,3 +217,8 @@ body{
   font-size: 12px;
   color: var(--muted);
 }
+
+.card.selected{
+  border: 2px solid var(--accent);
+  box-shadow: 0 10px 24px rgba(194,24,91,.18);
+}
