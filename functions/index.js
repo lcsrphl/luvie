@@ -57,7 +57,7 @@ app.post("/createCheckout", async (req, res) => {
           items,
           // seu “pedido interno”
           external_reference: doc.id,
-          notification_url: `${process.env.PUBLIC_FUNCTIONS_BASE_URL}/webhookMercadoPago`,
+          notification_url: "https://us-central1-luvie-app-2026.cloudfunctions.net/api/webhookMercadoPago",
           metadata: {
             pedidoId: doc.id,
             token
