@@ -57,20 +57,30 @@ export async function renderCheckout(mount, ctx) {
 
   // ⚠️ O formato exato do Payment Brick pode variar por versão/conta.
   // Esta base é a forma padrão (preferência).
-  await bricksBuilder.create("payment", "paymentBrick_container", {
-    initialization: {
-      preferenceId
+  const amount = Number(order.total || 0);
+
+await bricksBuilder.create("payment", "paymentBrick_container", {
+  initialization: {
+    amount // ✅ OBRIGATÓRIO no payment Brick
+  },
+  callbacks: {
+    onReady: () => {
+      mount.querySelector("#payMsg").textContent = "";
     },
-    callbacks: {
-      onReady: () => {
-        mount.querySelector("#payMsg").textContent = "";
-      },
-      onError: (error) => {
-        console.error(error);
-        mount.querySelector("#payMsg").textContent = "Erro ao carregar pagamento. Veja o console.";
-      }
+    onError: (error) => {
+      console.error(error);
+      mount.querySelector("#payMsg").textContent =
+        "Erro ao carregar pagamento. Veja o console.";
+    },
+    onSubmit: async ({ formData }) => {
+      // ⚠️ ainda não implementamos o endpoint que cria o pagamento de fato.
+      // Por enquanto só mostra no console:
+      console.log("formData", formData);
+      mount.querySelector("#payMsg").textContent =
+        "Submit recebido. Falta implementar criação do pagamento na API.";
     }
-  });
+  }
+});
 }
 
 function loadMpSdk() {
