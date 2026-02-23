@@ -1,4 +1,4 @@
-name: Deploy Firebase Hosting
+name: Deploy Firebase (Hosting + Functions)
 
 on:
   push:
@@ -17,10 +17,17 @@ jobs:
       - name: Install Firebase CLI
         run: npm i -g firebase-tools
 
-      - name: Deploy to Firebase Hosting
+      # ✅ instala dependências das functions
+      - name: Install Functions deps
+        working-directory: functions
+        run: npm ci || npm install
+
+      # ✅ deploya hosting + functions
+      - name: Deploy to Firebase (Hosting + Functions)
         env:
           SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          MP_ACCESS_TOKEN: ${{ secrets.MP_ACCESS_TOKEN }}
         run: |
           echo "$SERVICE_ACCOUNT_JSON" > /tmp/firebase-key.json
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-key.json
-          firebase deploy --only hosting --project luvie-app-2026
+          firebase deploy --only hosting,functions --project luvie-app-2026
