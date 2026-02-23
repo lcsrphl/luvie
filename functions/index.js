@@ -20,7 +20,7 @@ const MP_ACCESS_TOKEN = defineSecret("MP_ACCESS_TOKEN");
 // (opcional) webhook secret
 const MP_WEBHOOK_SECRET = defineSecret("MP_WEBHOOK_SECRET");
 // (opcional) base url
-const PUBLIC_FUNCTIONS_BASE_URL = defineSecret("PUBLIC_FUNCTIONS_BASE_URL");
+const PUBLIC_FUNCTIONS_BASE_URL = "https://us-central1-luvie-app-2026.cloudfunctions.net/api";
 
 function mpClient() {
   const token = MP_ACCESS_TOKEN.value();
@@ -70,7 +70,7 @@ app.post("/createCheckout", async (req, res) => {
           items,
           // seu “pedido interno”
           external_reference: doc.id,
-          notification_url: `https://us-central1-luvie-app-2026.cloudfunctions.net/api/webhookMercadoPago`,
+          notification_url: `${PUBLIC_FUNCTIONS_BASE_URL}/webhookMercadoPago`,
           metadata: {
             pedidoId: doc.id,
             token
