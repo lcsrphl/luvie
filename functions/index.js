@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import admin from "firebase-admin";
 import { onRequest } from "firebase-functions/v2/https";
+import { defineSecret } from "firebase-functions/params";
 
 // SDK Mercado Pago
 import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
