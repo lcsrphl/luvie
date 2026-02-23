@@ -28,6 +28,14 @@ function mpClient() {
  * body: { token: "..." }
  * Retorna: { order, preferenceId }
  */
+
+app.options("/createCheckout", (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+  res.set("Access-Control-Allow-Methods", "POST,OPTIONS");
+  res.status(204).send("");
+});
+
 app.post("/createCheckout", async (req, res) => {
   try {
     const { token } = req.body || {};
@@ -79,6 +87,8 @@ app.post("/createCheckout", async (req, res) => {
       itens: pedido.itens || [],
       total: Number(pedido.total || 0)
     };
+    
+    res.set("Access-Control-Allow-Origin", "*");
 
     return res.json({ order: orderForClient, preferenceId });
   } catch (err) {
