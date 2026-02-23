@@ -16,12 +16,16 @@ app.use(express.json());
 
 // 🔒 NUNCA coloque Access Token no front.
 // Coloque como variável de ambiente no deploy (GitHub Actions).
-const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN || "";
-const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET || ""; // opcional (se você usar assinatura)
+const MP_ACCESS_TOKEN = defineSecret("MP_ACCESS_TOKEN");
+// (opcional) webhook secret
+const MP_WEBHOOK_SECRET = defineSecret("MP_WEBHOOK_SECRET");
+// (opcional) base url
+const PUBLIC_FUNCTIONS_BASE_URL = defineSecret("PUBLIC_FUNCTIONS_BASE_URL");
 
 function mpClient() {
-  if (!MP_ACCESS_TOKEN) throw new Error("MP_ACCESS_TOKEN não configurado.");
-  return new MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN });
+  const token = MP_ACCESS_TOKEN.value();
+  if (!token) throw new Error("MP_ACCESS_TOKEN não configurado.");
+  return new MercadoPagoConfig({ accessToken: token });
 }
 
 /**
