@@ -15,4 +15,4 @@ addRoute("/", renderHome);
 addRoute("/novo-produto", renderNewProduct);
 addRoute("/clientes", renderCustomers);
 
-startRouter();
+startRouter(document.getElementById("app"));
