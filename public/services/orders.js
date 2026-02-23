@@ -12,14 +12,18 @@ function genToken(len = 18) {
   return out;
 }
 
-export async function createOrder({ clienteId, clienteNome, itens, total }) {
+export async function createOrder({ cliente, itens, total }) {
   const publicToken = genToken();
 
   const docRef = await addDoc(pedidosCol, {
     publicToken,
     status: "draft",
-    clienteId,
-    clienteNome,
+
+    clienteId: cliente?.id || "",
+    clienteNome: cliente?.nome || "",
+    clienteTelefone: cliente?.telefone || "",
+    clienteEndereco: cliente?.endereco || "",
+
     itens,
     total: Number(total || 0),
     createdAt: serverTimestamp(),
