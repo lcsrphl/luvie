@@ -150,7 +150,7 @@ app.post("/webhookMercadoPago", async (req, res) => {
 export const api = onRequest(
   {
     region: "us-central1",
-    secrets: ["MP_ACCESS_TOKEN", "MP_WEBHOOK_SECRET", "PUBLIC_FUNCTIONS_BASE_URL"],
+    secrets: [MP_ACCESS_TOKEN, MP_WEBHOOK_SECRET, PUBLIC_FUNCTIONS_BASE_URL],
   },
   app
 );
