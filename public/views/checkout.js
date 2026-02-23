@@ -65,53 +65,64 @@ if (!email) {
 
 await bricksBuilder.create("payment", "paymentBrick_container", {
   initialization: {
-    amount, // ✅ obrigatório
-    payer: { email }, // ✅ ajuda muito
+    amount: Number(amount || 0),     // ✅ garante número
+    payer: { email },               // ✅ ok
   },
+
+  // ✅ ISSO resolve "No payment type was selected"
+  customization: {
+    paymentMethods: {
+      creditCard: "all",
+      debitCard: "all",
+      bankTransfer: "all",  // PIX geralmente cai aqui
+      ticket: "all"         // boleto
+    }
+  },
+
   callbacks: {
     onReady: () => {
       mount.querySelector("#payMsg").textContent = "";
     },
 
-    // ✅ AQUI é onde o pagamento acontece (inline)
     onSubmit: async ({ selectedPaymentMethod, formData }) => {
       try {
-        // Você manda pro seu backend criar o pagamento
         const resp = await fetch(window.__API_BASE_URL__ + "/processPayment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             ...formData,
-            transaction_amount: amount,
+            transaction_amount: Number(amount || 0),
             payer: { ...formData.payer, email },
             description: "Pedido Luviê",
-            external_reference: order.pedidoId || "", // se você tiver o pedidoId no retorno
+            external_reference: order.pedidoId || "",
           }),
         });
 
         if (!resp.ok) throw new Error(await resp.text());
         const data = await resp.json();
 
-        // status pode ser: approved / pending / rejected
         if (data.status === "approved") {
           mount.querySelector("#payMsg").textContent = "Pagamento aprovado ✅";
         } else if (data.status === "pending") {
           mount.querySelector("#payMsg").textContent = "Pagamento pendente ⏳ (Pix/Boleto)";
         } else {
-          mount.querySelector("#payMsg").textContent = "Pagamento não aprovado. Verifique os dados.";
+          mount.querySelector("#payMsg").textContent =
+            "Pagamento não aprovado. Verifique os dados.";
         }
 
         return data;
       } catch (e) {
         console.error(e);
-        mount.querySelector("#payMsg").textContent = "Falha ao processar pagamento. Veja o console.";
+        mount.querySelector("#payMsg").textContent =
+          "Falha ao processar pagamento. Veja o console.";
         throw e;
       }
     },
 
     onError: (error) => {
       console.error("Brick error:", error);
-      mount.querySelector("#payMsg").textContent = "Erro ao carregar pagamento. Veja o console.";
+      mount.querySelector("#payMsg").textContent =
+        "Erro ao carregar pagamento. Veja o console.";
     },
   },
 });
