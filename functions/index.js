@@ -147,6 +147,84 @@ app.post("/webhookMercadoPago", async (req, res) => {
   }
 });
 
+app.options("/processPayment", (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+  res.set("Access-Control-Allow-Methods", "POST,OPTIONS");
+  res.status(204).send("");
+});
+
+app.post("/processPayment", async (req, res) => {
+  try {
+    // payload vem do Payment Brick
+    const {
+      token,                // token do cartão (quando cartão)
+      payment_method_id,
+      issuer_id,
+      installments,
+      transaction_amount,
+      payer,
+      description,
+      external_reference,
+    } = req.body || {};
+
+    if (!transaction_amount) {
+      return res.status(400).json({ error: "transaction_amount obrigatório" });
+    }
+    if (!payment_method_id) {
+      return res.status(400).json({ error: "payment_method_id obrigatório" });
+    }
+    if (!payer?.email) {
+      return res.status(400).json({ error: "payer.email obrigatório" });
+    }
+
+    const paymentApi = new Payment(mpClient());
+
+    const created = await paymentApi.create({
+      body: {
+        token: token || undefined,
+        payment_method_id,
+        issuer_id: issuer_id || undefined,
+        installments: installments ? Number(installments) : undefined,
+        transaction_amount: Number(transaction_amount),
+        description: description || "Pedido Luviê",
+        external_reference: external_reference || undefined,
+        payer: {
+          email: payer.email,
+          first_name: payer.first_name || undefined,
+          last_name: payer.last_name || undefined,
+          identification: payer.identification || undefined,
+        },
+      },
+    });
+
+    // opcional: salvar no pedido (se você passar external_reference = pedidoId)
+    if (external_reference) {
+      await db.collection("pedidos").doc(String(external_reference)).set(
+        {
+          pagamento: {
+            mpPaymentId: created.id,
+            status: created.status,
+            status_detail: created.status_detail,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+        },
+        { merge: true }
+      );
+    }
+
+    res.set("Access-Control-Allow-Origin", "*");
+    return res.json({
+      id: created.id,
+      status: created.status,
+      status_detail: created.status_detail,
+    });
+  } catch (err) {
+    console.error("processPayment error:", err);
+    return res.status(500).json({ error: String(err?.message || err) });
+  }
+});
+
 export const api = onRequest(
   {
     region: "us-central1",
