@@ -34,6 +34,8 @@ export function renderHome(mount) {
     </nav>
   `;
 
+  mount.querySelector("#navHome").addEventListener("click", () => navigate("/"));
+mount.querySelector("#navPedidos").addEventListener("click", () => navigate("/pedidos"));
   mount.querySelector("#btnNovoProduto").addEventListener("click", () => navigate("/novo-produto"));
   mount.querySelector("#btnNovoPedido").addEventListener("click", () => {
   const ids = getSelectedProducts();
