@@ -71,6 +71,7 @@ app.post("/createCheckout", async (req, res) => {
         body: {
           items,
           external_reference: doc.id,
+          // aqui sim pode (e costuma) ficar
           notification_url: `${PUBLIC_FUNCTIONS_BASE_URL}/webhookMercadoPago`,
           metadata: { pedidoId: doc.id, token },
         },
@@ -175,9 +176,10 @@ app.post("/processPayment", async (req, res) => {
     if (!payment_method_id) {
       return res.status(400).json({ error: "payment_method_id obrigatório" });
     }
-    if (!payer?.email) {
-      return res.status(400).json({ error: "payer.email obrigatório" });
-    }
+
+    // ✅ fallback de email (não quebra UX)
+    const payerEmail =
+      payer?.email || `cliente_${external_reference || Date.now()}@luvie.local`;
 
     const paymentApi = new Payment(mpClient());
 
@@ -192,8 +194,8 @@ app.post("/processPayment", async (req, res) => {
           payment_method_id: "pix",
           date_of_expiration: expiresAt,
           external_reference: external_reference || undefined,
-          payer: { email: payer.email },
-          notification_url: `${PUBLIC_FUNCTIONS_BASE_URL}/webhookMercadoPago`,
+          payer: { email: payerEmail },
+          // ⚠️ NÃO colocar notification_url aqui (Payment.create)
           metadata: { pedidoId: external_reference || "" },
         },
       });
@@ -238,7 +240,7 @@ app.post("/processPayment", async (req, res) => {
       });
     }
 
-    // ✅ Cartão (mantém seu comportamento)
+    // ✅ Cartão
     const created = await paymentApi.create({
       body: {
         token: token || undefined,
@@ -249,12 +251,12 @@ app.post("/processPayment", async (req, res) => {
         description: description || "Pedido Luviê",
         external_reference: external_reference || undefined,
         payer: {
-          email: payer.email,
-          first_name: payer.first_name || undefined,
-          last_name: payer.last_name || undefined,
-          identification: payer.identification || undefined,
+          email: payerEmail,
+          first_name: payer?.first_name || undefined,
+          last_name: payer?.last_name || undefined,
+          identification: payer?.identification || undefined,
         },
-        notification_url: `${PUBLIC_FUNCTIONS_BASE_URL}/webhookMercadoPago`,
+        // ⚠️ NÃO colocar notification_url aqui (Payment.create)
         metadata: { pedidoId: external_reference || "" },
       },
     });
