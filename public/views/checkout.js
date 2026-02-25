@@ -101,14 +101,26 @@ await bricksBuilder.create("payment", "paymentBrick_container", {
         if (!resp.ok) throw new Error(await resp.text());
         const data = await resp.json();
 
-        if (data.status === "approved") {
-          mount.querySelector("#payMsg").textContent = "Pagamento aprovado ✅";
-        } else if (data.status === "pending") {
-          mount.querySelector("#payMsg").textContent = "Pagamento pendente ⏳ (Pix/Boleto)";
-        } else {
-          mount.querySelector("#payMsg").textContent =
-            "Pagamento não aprovado. Verifique os dados.";
-        }
+        // 👇 se for PIX, troca o Brick pela tela Pix
+if (data.payment_method_id === "pix" && data.pix?.qr_code) {
+  await showPixFlow(mount, {
+    paymentId: data.id,
+    qr_code: data.pix.qr_code,
+    expiresAt: data.expiresAt
+  });
+  return data;
+}
+
+// cartão
+if (data.status === "approved") {
+  mount.querySelector("#payMsg").textContent = "Pagamento aprovado ✅";
+} else if (data.status === "pending") {
+  mount.querySelector("#payMsg").textContent =
+    "Pagamento pendente ⏳";
+} else {
+  mount.querySelector("#payMsg").textContent =
+    "Pagamento não aprovado. Verifique os dados.";
+}
 
         return data;
       } catch (e) {
@@ -146,4 +158,69 @@ function escapeHtml(str){
     .replaceAll(">","&gt;")
     .replaceAll('"',"&quot;")
     .replaceAll("'","&#039;");
+}
+
+async function showPixFlow(mount, { paymentId, qr_code, expiresAt }) {
+  const container = mount.querySelector("#paymentBrick_container");
+
+  container.innerHTML = `
+    <div class="meta">
+      <p class="name">Pague com Pix</p>
+
+      <textarea readonly id="pixCode"
+        style="width:100%;height:90px;margin-top:8px;">
+${qr_code}
+      </textarea>
+
+      <button id="btnCopyPix" class="btn btn-primary"
+        style="margin-top:8px;">Copiar código</button>
+
+      <p class="small" style="margin-top:8px;">
+        Expira em: <span id="pixTimer">05:00</span>
+      </p>
+
+      <p class="small" id="pixStatus"
+        style="margin-top:8px;"></p>
+    </div>
+  `;
+
+  mount.querySelector("#btnCopyPix")
+    .addEventListener("click", () => {
+      navigator.clipboard.writeText(qr_code);
+      mount.querySelector("#pixStatus").textContent =
+        "Código copiado! Abra o app do seu banco.";
+    });
+
+  // ⏱️ Timer 5 min
+  const end = new Date(expiresAt).getTime();
+
+  const t = setInterval(() => {
+    const diff = end - Date.now();
+    if (diff <= 0) {
+      clearInterval(t);
+      mount.querySelector("#pixTimer").textContent = "Expirado";
+      return;
+    }
+    const m = Math.floor(diff/60000);
+    const s = Math.floor((diff%60000)/1000);
+    mount.querySelector("#pixTimer").textContent =
+      String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+  }, 1000);
+
+  // 🔁 polling status
+  const poll = setInterval(async () => {
+    try {
+      const r = await fetch(
+        window.__API_BASE_URL__ + "/paymentStatus?paymentId=" + paymentId
+      );
+      if (!r.ok) return;
+      const j = await r.json();
+
+      if (j.status === "approved") {
+        clearInterval(poll);
+        mount.querySelector("#pixStatus").textContent =
+          "Pagamento efetuado com sucesso ✅";
+      }
+    } catch {}
+  }, 4000);
 }
