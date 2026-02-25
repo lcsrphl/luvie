@@ -41,6 +41,8 @@ export function renderCustomers(mount) {
     </nav>
   `;
 
+  mount.querySelector("#navHome").addEventListener("click", () => navigate("/"));
+mount.querySelector("#navPedidos").addEventListener("click", () => navigate("/pedidos"));
   mount.querySelector("#btnVoltar").addEventListener("click", () => navigate("/"));
   mount.querySelector("#navHome").addEventListener("click", () => navigate("/"));
 
