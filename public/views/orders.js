@@ -24,6 +24,8 @@ export function renderOrders(mount) {
   `;
 
   mount.querySelector("#navHome").addEventListener("click", () => navigate("/"));
+mount.querySelector("#navPedidos").addEventListener("click", () => navigate("/pedidos"));
+  mount.querySelector("#navHome").addEventListener("click", () => navigate("/"));
   mount.querySelector("#navPedidos").addEventListener("click", () => navigate("/pedidos"));
 
   const list = mount.querySelector("#ordersList");
