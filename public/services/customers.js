@@ -13,9 +13,10 @@ export function subscribeCustomers(callback) {
   });
 }
 
-export async function createCustomer({ nome, telefone, endereco }) {
+export async function createCustomer({ nome, email, telefone, endereco }) {
   const docRef = await addDoc(col, {
     nome: String(nome || "").trim(),
+    email: String(email || "").trim().toLowerCase(), // ✅
     telefone: String(telefone || "").trim(),
     endereco: String(endereco || "").trim(),
     createdAt: serverTimestamp()
