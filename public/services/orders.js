@@ -18,21 +18,22 @@ function cleanUndefined(obj) {
   return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
 }
 
-export async function createOrder({ clienteId, clienteNome, itens, total }) {
-  // ✅ trava cedo com erro claro (evita Firestore quebrar)
-  if (!clienteId) throw new Error("createOrder: clienteId obrigatório");
-  if (!clienteNome) throw new Error("createOrder: clienteNome obrigatório");
+export async function createOrder({ cliente, itens, total }) {
+  // ✅ trava cedo com erro claro
+  if (!cliente?.id) throw new Error("createOrder: cliente.id obrigatório");
+  if (!cliente?.nome) throw new Error("createOrder: cliente.nome obrigatório");
+  if (!cliente?.email) throw new Error("createOrder: cliente.email obrigatório");
   if (!Array.isArray(itens) || itens.length === 0) throw new Error("createOrder: itens obrigatório");
 
   const publicToken = genToken();
 
   const payload = cleanUndefined({
     publicToken,
-    // ✅ mais coerente pro seu fluxo (link já é de pagamento)
     status: "awaiting_payment",
 
-    clienteId: String(clienteId),
-    clienteNome: String(clienteNome),
+    clienteId: String(cliente.id),
+    clienteNome: String(cliente.nome),
+    clienteEmail: String(cliente.email).trim().toLowerCase(), // ✅ AQUI
 
     itens,
     total: Number(total || 0),
