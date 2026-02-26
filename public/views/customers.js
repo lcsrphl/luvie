@@ -117,7 +117,14 @@ mount.querySelector("#navPedidos").addEventListener("click", () => navigate("/pe
 
     const total = itens.reduce((sum, it) => sum + (it.preco * (it.qtd || 1)), 0);
 
-    const { publicToken } = await createOrder({ cliente, itens, total });
+    const { publicToken } = await createOrder({
+  clienteId: cliente.id,
+  clienteNome: cliente.nome || "",
+  clienteTelefone: cliente.telefone || "",
+  clienteEndereco: cliente.endereco || "",
+  itens,
+  total,
+});
 
     const link = `${location.origin}${location.pathname}#/checkout?t=${encodeURIComponent(publicToken)}`;
 
