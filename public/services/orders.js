@@ -14,19 +14,34 @@ function genToken(len = 18) {
   return out;
 }
 
+function cleanUndefined(obj) {
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
+}
+
 export async function createOrder({ clienteId, clienteNome, itens, total }) {
+  // ✅ trava cedo com erro claro (evita Firestore quebrar)
+  if (!clienteId) throw new Error("createOrder: clienteId obrigatório");
+  if (!clienteNome) throw new Error("createOrder: clienteNome obrigatório");
+  if (!Array.isArray(itens) || itens.length === 0) throw new Error("createOrder: itens obrigatório");
+
   const publicToken = genToken();
 
-  const docRef = await addDoc(pedidosCol, {
+  const payload = cleanUndefined({
     publicToken,
-    status: "draft",
-    clienteId,
-    clienteNome,
+    // ✅ mais coerente pro seu fluxo (link já é de pagamento)
+    status: "awaiting_payment",
+
+    clienteId: String(clienteId),
+    clienteNome: String(clienteNome),
+
     itens,
     total: Number(total || 0),
+
     createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
+    updatedAt: serverTimestamp(),
   });
+
+  const docRef = await addDoc(pedidosCol, payload);
 
   return { pedidoId: docRef.id, publicToken };
 }
