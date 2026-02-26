@@ -62,11 +62,12 @@ export async function renderCheckout(mount, ctx) {
 
   // (mínimo pro MP) email do pagador
   // ✅ depois você pode substituir por order.clienteEmail, se tiver cadastrado
-  const email = prompt("Digite seu e-mail para pagamento:") || "";
-  if (!email) {
-    mount.querySelector("#payMsg").textContent = "E-mail é obrigatório para pagar.";
-    return;
-  }
+  const email = (order.clienteEmail || "").trim().toLowerCase();
+if (!email) {
+  mount.querySelector("#payMsg").textContent =
+    "E-mail do cliente não cadastrado. Volte e atualize o cadastro.";
+  return;
+}
 
   await bricksBuilder.create("payment", "paymentBrick_container", {
     initialization: {
