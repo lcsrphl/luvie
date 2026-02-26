@@ -86,11 +86,12 @@ app.post("/createCheckout", async (req, res) => {
     }
 
     const orderForClient = {
-      clienteNome: pedido.clienteNome || "",
-      itens: pedido.itens || [],
-      total: Number(pedido.total || 0),
-      pedidoId: pedido.id || doc.id, // ajuda no front
-    };
+  clienteNome: pedido.clienteNome || "",
+  clienteEmail: pedido.clienteEmail || "", // ✅
+  itens: pedido.itens || [],
+  total: Number(pedido.total || 0),
+  pedidoId: pedido.id || doc.id
+};
 
     res.set("Access-Control-Allow-Origin", "*");
     return res.json({ order: orderForClient, preferenceId });
