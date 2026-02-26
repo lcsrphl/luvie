@@ -262,19 +262,23 @@ app.post("/processPayment", async (req, res) => {
     });
 
     if (external_reference) {
-      await db.collection("pedidos").doc(String(external_reference)).set(
-        {
-          pagamento: {
-            mpPaymentId: created.id,
-            method: "card",
-            status: created.status,
-            status_detail: created.status_detail,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-        },
-        { merge: true }
-      );
-    }
+  await db.collection("pedidos").doc(String(external_reference)).set(
+    {
+      pagamento: {
+        mpPaymentId: created.id,
+        method: "card",
+        status: created.status,
+        status_detail: created.status_detail,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      status: created.status === "approved"
+        ? "paid"
+        : "awaiting_payment",
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    },
+    { merge: true }
+  );
+}
 
     res.set("Access-Control-Allow-Origin", "*");
     return res.json({
