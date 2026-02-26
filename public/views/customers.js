@@ -52,8 +52,10 @@ mount.querySelector("#navPedidos").addEventListener("click", () => navigate("/pe
 
     const telefone = prompt("Telefone (opcional):") || "";
     const endereco = prompt("Endereço (opcional):") || "";
+    const email = (prompt("E-mail (obrigatório):") || "").trim().toLowerCase();
+if (!email) return alert("E-mail é obrigatório.");
 
-    await createCustomer({ nome, telefone, endereco });
+    await createCustomer({ nome, email, telefone, endereco });
   });
 
   const list = mount.querySelector("#clientesList");
@@ -85,6 +87,7 @@ mount.querySelector("#navPedidos").addEventListener("click", () => navigate("/pe
         setSelectedCustomer({
           id: c.id,
           nome: c.nome || "",
+          email: c.email || "",          // ✅
           telefone: c.telefone || "",
           endereco: c.endereco || ""
         });
