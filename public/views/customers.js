@@ -101,7 +101,8 @@ if (!email) return alert("E-mail é obrigatório.");
 
   btnGerar.addEventListener("click", async () => {
     const cliente = getSelectedCustomer();
-    if (!cliente?.id) return alert("Selecione uma cliente.");
+if (!cliente?.id) return alert("Selecione uma cliente.");
+if (!cliente?.email) return alert("Cliente sem e-mail. Edite/cadastre novamente.");
 
     const ids = getSelectedProducts();
     if (!ids.length) return alert("Selecione pelo menos 1 produto.");
