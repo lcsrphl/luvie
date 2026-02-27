@@ -121,10 +121,13 @@ if (!email) return alert("E-mail é obrigatório.");
     const total = itens.reduce((sum, it) => sum + (it.preco * (it.qtd || 1)), 0);
 
     const { publicToken } = await createOrder({
-  clienteId: cliente.id,
-  clienteNome: cliente.nome || "",
-  clienteTelefone: cliente.telefone || "",
-  clienteEndereco: cliente.endereco || "",
+  cliente: {
+    id: cliente.id,
+    nome: cliente.nome || "",
+    email: (cliente.email || "").trim().toLowerCase(),
+    telefone: cliente.telefone || "",
+    endereco: cliente.endereco || ""
+  },
   itens,
   total,
 });
