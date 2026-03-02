@@ -14,13 +14,13 @@ import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
 admin.initializeApp();
 const db = admin.firestore();
 const storage = new Storage();
+
 const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
 
-// 🔒 NUNCA coloque Access Token no front.
+// 🔒 Secrets
 const MP_ACCESS_TOKEN = defineSecret("MP_ACCESS_TOKEN");
-// (opcional) webhook secret
 const MP_WEBHOOK_SECRET = defineSecret("MP_WEBHOOK_SECRET");
 
 // sua base pública das functions (api)
@@ -33,10 +33,17 @@ function mpClient() {
   return new MercadoPagoConfig({ accessToken: token });
 }
 
+// Remove keys undefined / null (evita enviar lixo pro MP)
+function clean(obj) {
+  if (!obj || typeof obj !== "object") return obj;
+  Object.keys(obj).forEach((k) => {
+    if (obj[k] === undefined || obj[k] === null) delete obj[k];
+  });
+  return obj;
+}
+
 /**
- * POST /createCheckout
- * body: { token: "..." }
- * Retorna: { order, preferenceId }
+ * OPTIONS /createCheckout
  */
 app.options("/createCheckout", (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
@@ -45,6 +52,11 @@ app.options("/createCheckout", (req, res) => {
   res.status(204).send("");
 });
 
+/**
+ * POST /createCheckout
+ * body: { token }
+ * Retorna: { order, preferenceId }
+ */
 app.post("/createCheckout", async (req, res) => {
   try {
     const { token } = req.body || {};
@@ -55,6 +67,7 @@ app.post("/createCheckout", async (req, res) => {
       .where("publicToken", "==", token)
       .limit(1)
       .get();
+
     if (snap.empty) return res.status(404).json({ error: "Pedido não encontrado" });
 
     const doc = snap.docs[0];
@@ -75,7 +88,6 @@ app.post("/createCheckout", async (req, res) => {
         body: {
           items,
           external_reference: doc.id,
-          // aqui sim pode (e costuma) ficar
           notification_url: `${PUBLIC_FUNCTIONS_BASE_URL}/webhookMercadoPago`,
           metadata: { pedidoId: doc.id, token },
         },
@@ -90,24 +102,23 @@ app.post("/createCheckout", async (req, res) => {
     }
 
     const orderForClient = {
-  clienteNome: pedido.clienteNome || "",
-  clienteEmail: pedido.clienteEmail || "", // ✅
-  itens: pedido.itens || [],
-  total: Number(pedido.total || 0),
-  pedidoId: pedido.id || doc.id
-};
+      clienteNome: pedido.clienteNome || "",
+      clienteEmail: pedido.clienteEmail || "",
+      itens: pedido.itens || [],
+      total: Number(pedido.total || 0),
+      pedidoId: pedido.id || doc.id,
+    };
 
     res.set("Access-Control-Allow-Origin", "*");
     return res.json({ order: orderForClient, preferenceId });
   } catch (err) {
-    console.error(err);
+    console.error("createCheckout error:", err);
     return res.status(500).json({ error: String(err?.message || err) });
   }
 });
 
 /**
  * POST /webhookMercadoPago
- * Mercado Pago chama aqui quando houver atualização de pagamento.
  */
 app.post("/webhookMercadoPago", async (req, res) => {
   try {
@@ -122,7 +133,7 @@ app.post("/webhookMercadoPago", async (req, res) => {
     const paymentApi = new Payment(mpClient());
     const payment = await paymentApi.get({ id: paymentId });
 
-    const status = payment.status; // approved, rejected, pending...
+    const status = payment.status;
     const status_detail = payment.status_detail;
     const pedidoId = payment.metadata?.pedidoId || payment.external_reference;
 
@@ -165,14 +176,14 @@ app.options("/processPayment", (req, res) => {
 app.post("/processPayment", async (req, res) => {
   try {
     const {
-      token, // token do cartão (cartão)
+      token, // token do cartão
       payment_method_id,
       issuer_id,
       installments,
       transaction_amount,
       payer,
       description,
-      external_reference, // use como pedidoId
+      external_reference,
     } = req.body || {};
 
     if (!transaction_amount) {
@@ -182,34 +193,31 @@ app.post("/processPayment", async (req, res) => {
       return res.status(400).json({ error: "payment_method_id obrigatório" });
     }
 
-    // ✅ fallback de email (não quebra UX)
     const payerEmail = (payer?.email || "").trim().toLowerCase();
-if (!payerEmail) {
-  return res.status(400).json({ error: "payer.email obrigatório" });
-}
+    if (!payerEmail) {
+      return res.status(400).json({ error: "payer.email obrigatório" });
+    }
 
     const paymentApi = new Payment(mpClient());
 
-    // ✅ PIX: copia e cola + expira em 5 min
+    // ✅ PIX
     if (payment_method_id === "pix") {
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
       const created = await paymentApi.create({
-        body: {
+        body: clean({
           transaction_amount: Number(transaction_amount),
           description: description || "Pedido Luviê",
           payment_method_id: "pix",
           date_of_expiration: expiresAt,
           external_reference: external_reference || undefined,
           payer: { email: payerEmail },
-          // ⚠️ NÃO colocar notification_url aqui (Payment.create)
           metadata: { pedidoId: external_reference || "" },
-        },
+        }),
       });
 
       const tx = created?.point_of_interaction?.transaction_data || {};
 
-      // salva no Firestore
       if (external_reference) {
         await db.collection("pedidos").doc(String(external_reference)).set(
           {
@@ -247,52 +255,42 @@ if (!payerEmail) {
       });
     }
 
-    // ✅ Cartão
-    const created = await paymentApi.create({
-      body: {
-        token: token || undefined,
-        payment_method_id,
-        issuer_id: issuer_id || undefined,
-        installments: installments ? Number(installments) : undefined,
-        transaction_amount: Number(transaction_amount),
-        description: description || "Pedido Luviê",
-        external_reference: external_reference || undefined,
-        payer: {
-  email: payerEmail,
-  ...(payer?.first_name ? { first_name: payer.first_name } : {}),
-  ...(payer?.last_name ? { last_name: payer.last_name } : {}),
-  ...(payer?.identification?.type && payer?.identification?.number
-    ? {
-        identification: {
-          type: payer.identification.type,
-          number: payer.identification.number,
-        },
-      }
-    : {}),
-},
-        // ⚠️ NÃO colocar notification_url aqui (Payment.create)
-        metadata: { pedidoId: external_reference || "" },
-      },
+    // ✅ CARTÃO
+    const body = clean({
+      token: token || undefined,
+      payment_method_id,
+      issuer_id: issuer_id || undefined,
+      installments: installments ? Number(installments) : undefined,
+      transaction_amount: Number(transaction_amount),
+      description: description || "Pedido Luviê",
+      external_reference: external_reference || undefined,
+      payer: clean({
+        email: payerEmail,
+        first_name: payer?.first_name || undefined,
+        last_name: payer?.last_name || undefined,
+        identification: payer?.identification || undefined,
+      }),
+      metadata: { pedidoId: external_reference || "" },
     });
 
+    const created = await paymentApi.create({ body });
+
     if (external_reference) {
-  await db.collection("pedidos").doc(String(external_reference)).set(
-    {
-      pagamento: {
-        mpPaymentId: created.id,
-        method: "card",
-        status: created.status,
-        status_detail: created.status_detail,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      status: created.status === "approved"
-        ? "paid"
-        : "awaiting_payment",
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    },
-    { merge: true }
-  );
-}
+      await db.collection("pedidos").doc(String(external_reference)).set(
+        {
+          pagamento: {
+            mpPaymentId: created.id,
+            method: "card",
+            status: created.status,
+            status_detail: created.status_detail,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          status: created.status === "approved" ? "paid" : "awaiting_payment",
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
 
     res.set("Access-Control-Allow-Origin", "*");
     return res.json({
@@ -302,34 +300,26 @@ if (!payerEmail) {
       payment_method_id,
     });
   } catch (err) {
-  console.error("processPayment error raw:", err);
+    // ✅ ESTE CATCH É O IMPORTANTE: sem fallback fora dele
+    console.error("processPayment error raw:", err);
 
-  const status = err?.status || err?.response?.status || 400;
+    const status = err?.status || err?.response?.status || 400;
 
-  // pega possíveis formatos do SDK do Mercado Pago
-  const mpRaw =
-    (Array.isArray(err?.cause) ? err.cause : null) ||
-    err?.cause ||
-    err?.response?.data ||
-    err?.response ||
-    null;
+    const mpRaw =
+      (Array.isArray(err?.cause) ? err.cause : null) ||
+      err?.cause ||
+      err?.response?.data ||
+      err?.response ||
+      null;
 
-  // se for array, só usa se tiver itens (evita mp: [])
-  const mp = Array.isArray(mpRaw) ? (mpRaw.length ? mpRaw : null) : mpRaw;
+    const mp = Array.isArray(mpRaw) ? (mpRaw.length ? mpRaw : null) : mpRaw;
 
-  return res.status(status).json({
-    error: "mp_error",
-    message: err?.message || "Mercado Pago error",
-    mp, // pode vir null e tá tudo bem
-  });
-}
-
-  // fallback
-  return res.status(500).json({
-    error: "internal_error",
-    message: String(err?.message || err),
-  });
-}
+    return res.status(status).json({
+      error: "mp_error",
+      message: err?.message || "Mercado Pago error",
+      mp,
+    });
+  }
 });
 
 /**
@@ -344,7 +334,6 @@ app.options("/paymentStatus", (req, res) => {
 
 /**
  * GET /paymentStatus?paymentId=123
- * Consulta o status do pagamento no Mercado Pago.
  */
 app.get("/paymentStatus", async (req, res) => {
   try {
@@ -374,10 +363,13 @@ export const api = onRequest(
   app
 );
 
+/**
+ * Gera thumbnail 300px pra fotos de produto
+ */
 export const generateProductThumb = onObjectFinalized(
   { region: "us-central1" },
   async (event) => {
-    const filePath = event.data.name;   // ex: produtos/ABC123/capa.jpg
+    const filePath = event.data.name; // ex: produtos/ABC123/capa.jpg
     const bucketName = event.data.bucket;
 
     if (!filePath) return;
@@ -388,12 +380,12 @@ export const generateProductThumb = onObjectFinalized(
     if (filePath.includes("_thumb")) return;
 
     const parts = filePath.split("/");
-    const produtoId = parts[1];         // ABC123
+    const produtoId = parts[1];
     if (!produtoId) return;
 
     const bucketRef = storage.bucket(bucketName);
 
-    const originalName = parts[parts.length - 1]; // capa.jpg
+    const originalName = parts[parts.length - 1];
     const tmpOriginal = `/tmp/${produtoId}-${originalName}`;
     const tmpThumb = `/tmp/${produtoId}-thumb.jpg`;
 
@@ -406,10 +398,7 @@ export const generateProductThumb = onObjectFinalized(
       .jpeg({ quality: 70 })
       .toFile(tmpThumb);
 
-    // sobe thumb em path fixo (mais simples)
     const thumbPath = `produtos/${produtoId}/thumb.jpg`;
-
-    // token de download (pra gerar URL pública)
     const token = crypto.randomUUID();
 
     await bucketRef.upload(tmpThumb, {
@@ -422,12 +411,10 @@ export const generateProductThumb = onObjectFinalized(
       },
     });
 
-    // monta downloadURL
     const encoded = encodeURIComponent(thumbPath);
     const fotoThumbUrl =
       `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encoded}?alt=media&token=${token}`;
 
-    // grava no Firestore
     await db.collection("produtos").doc(produtoId).set(
       {
         fotoThumbUrl,
