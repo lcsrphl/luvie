@@ -52,6 +52,29 @@ function mpClient() {
   });
 }
 
+app.get("/__diag", (req, res) => {
+  // NÃO vaza token
+  const envVal = process.env.MP_ACCESS_TOKEN || "";
+  let secretVal = "";
+  let secretErr = "";
+
+  try {
+    secretVal = MP_ACCESS_TOKEN.value() || "";
+  } catch (e) {
+    secretErr = String(e?.message || e);
+  }
+
+  res.json({
+    env_exists: !!envVal,
+    env_len: envVal.length,
+    secret_exists: !!secretVal,
+    secret_len: secretVal.length,
+    secret_err: secretErr || null,
+    // só pra garantir que é a revisão certa
+    k_service: process.env.K_SERVICE || null,
+    k_revision: process.env.K_REVISION || null,
+  });
+});
 /**
  * POST /createCheckout
  * body: { token: "..." }
