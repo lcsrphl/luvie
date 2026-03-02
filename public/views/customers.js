@@ -112,12 +112,13 @@ if (!cliente?.email) return alert("Cliente sem e-mail. Edite/cadastre novamente.
     // monta itens (qtd=1 por enquanto)
     const itens = productsCache
       .filter(p => set.has(p.id))
-      .map(p => ({
-        produtoId: p.id,
-        titulo: p.titulo || "",
-        preco: Number(p.preco || 0),
-        qtd: 1
-      }));
+    .map(p => ({
+  produtoId: p.id,
+  titulo: p.titulo || "",
+  preco: Number(p.preco || 0),
+  qtd: 1,
+  fotoUrl: p.fotoUrl || "" // ✅ salva a foto no pedido
+}));
 
     const total = itens.reduce((sum, it) => sum + (it.preco * (it.qtd || 1)), 0);
 
