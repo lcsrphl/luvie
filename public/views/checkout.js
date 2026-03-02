@@ -96,17 +96,17 @@ if (!email) {
   try {
     // ✅ MONTA PAYLOAD (whitelist)
     const payload = {
-      payment_method_id: formData.payment_method_id,
-      transaction_amount: Number(amount || 0),
-      description: "Pedido Luviê",
-      external_reference: order.pedidoId || order.id || "",
-      payer: { email },
+  ...formData, // ✅ mantém tudo que o Brick precisa
 
-      // cartão (só se vier)
-      token: formData.token,
-      issuer_id: formData.issuer_id,
-      installments: formData.installments,
-    };
+  transaction_amount: Number(amount || 0),
+  description: "Pedido Luviê",
+  external_reference: order.pedidoId || order.id || "",
+
+  payer: {
+    ...(formData.payer || {}),
+    email, // ✅ força email do cliente
+  },
+};
 
     // ✅ remove campos undefined (evita enviar lixo)
     Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
