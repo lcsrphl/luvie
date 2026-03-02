@@ -43,14 +43,27 @@ mount.querySelector("#navPedidos").addEventListener("click", () => navigate("/pe
       const card = document.createElement("button");
       card.className = "card";
       card.type = "button";
+      const firstItem = (p.itens && p.itens.length) ? p.itens[0] : null;
+
+const img =
+  firstItem?.fotoThumbUrl ||
+  firstItem?.fotoUrl ||
+  "";
       card.innerHTML = `
-        <div class="meta">
-          <p class="name">${escapeHtml(p.clienteNome || "Cliente")}</p>
-          <p class="price">
-            ${formatBRL(p.total)} • ${((p.itens || []).length)} item(ns)
-          </p>
-        </div>
-      `;
+  <div class="thumb">
+    ${
+      img
+        ? `<img src="${img}" alt="" loading="lazy" decoding="async">`
+        : `<div class="plus">?</div>`
+    }
+  </div>
+  <div class="meta">
+    <p class="name">${escapeHtml(p.clienteNome || "Cliente")}</p>
+    <p class="price">
+      ${formatBRL(p.total)} • ${((p.itens || []).length)} item(ns)
+    </p>
+  </div>
+`;
 
       card.addEventListener("click", () => {
         navigate(`/pedido?id=${encodeURIComponent(p.id)}`);
