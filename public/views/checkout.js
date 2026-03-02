@@ -89,27 +89,36 @@ if (!email) {
         mount.querySelector("#payMsg").textContent = "";
       },
 
-      onSubmit: async ({ formData }) => {
+      onSubmit: async (param) => {
   const payMsg = mount.querySelector("#payMsg");
   payMsg.textContent = "Processando pagamento…";
 
+  // ✅ pega formData independente do formato do Brick
+  const formData = param?.formData ?? param;
+  if (!formData) {
+    payMsg.textContent = "Erro: Brick não retornou formData.";
+    throw new Error("Brick não retornou formData");
+  }
+
   try {
-    // ✅ MONTA PAYLOAD (whitelist)
     const payload = {
-  ...formData, // ✅ mantém tudo que o Brick precisa
+      ...formData,
 
-  transaction_amount: Number(amount || 0),
-  description: "Pedido Luviê",
-  external_reference: order.pedidoId || order.id || "",
+      transaction_amount: Number(amount || 0),
+      description: "Pedido Luviê",
+      external_reference: order.pedidoId || order.id || "",
 
-  payer: {
-    ...(formData.payer || {}),
-    email, // ✅ força email do cliente
-  },
-};
+      payer: {
+        ...(formData.payer || {}),
+        email,
+      },
+    };
 
-    // ✅ remove campos undefined (evita enviar lixo)
+    // ✅ remove undefined do topo
     Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
+
+    // ✅ DEBUG: veja se está vindo token/payment_method_id
+    console.log("payload->processPayment", payload);
 
     const resp = await fetch(window.__API_BASE_URL__ + "/processPayment", {
       method: "POST",
@@ -120,7 +129,6 @@ if (!email) {
     if (!resp.ok) throw new Error(await resp.text());
     const data = await resp.json();
 
-    // ✅ PIX: troca o Brick pela tela Pix
     if (data.payment_method_id === "pix" && data.pix?.qr_code) {
       await showPixFlow(mount, {
         paymentId: data.id,
@@ -130,7 +138,6 @@ if (!email) {
       return data;
     }
 
-    // ✅ cartão
     if (data.status === "approved") {
       payMsg.textContent = "Pagamento aprovado ✅";
     } else if (data.status === "pending") {
@@ -144,7 +151,6 @@ if (!email) {
     console.error("processPayment failed:", e);
 
     let msg = "Falha ao processar pagamento.";
-
     try {
       const parsed = JSON.parse(e.message);
       if (parsed?.mp?.message) msg = parsed.mp.message;
