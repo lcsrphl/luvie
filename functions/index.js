@@ -6,6 +6,7 @@ import { defineSecret } from "firebase-functions/params";
 import { onObjectFinalized } from "firebase-functions/v2/storage";
 import sharp from "sharp";
 import { Storage } from "@google-cloud/storage";
+import crypto from "crypto";
 
 // SDK Mercado Pago
 import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
@@ -342,36 +343,66 @@ export const api = onRequest(
 export const generateProductThumb = onObjectFinalized(
   { region: "us-central1" },
   async (event) => {
-    const filePath = event.data.name;
-    const bucket = event.data.bucket;
+    const filePath = event.data.name;   // ex: produtos/ABC123/capa.jpg
+    const bucketName = event.data.bucket;
 
+    if (!filePath) return;
     if (!filePath.startsWith("produtos/")) return;
+
+    // evita loop: se já for thumb, não processa
+    if (filePath.includes("/thumb.")) return;
     if (filePath.includes("_thumb")) return;
 
-    const fileName = filePath.split("/").pop();
-    const thumbPath = filePath.replace(
-      fileName,
-      fileName.replace(".", "_thumb.")
-    );
+    const parts = filePath.split("/");
+    const produtoId = parts[1];         // ABC123
+    if (!produtoId) return;
 
-    const bucketRef = storage.bucket(bucket);
-    const tempFile = `/tmp/${fileName}`;
-    const tempThumb = `/tmp/thumb-${fileName}`;
+    const bucketRef = storage.bucket(bucketName);
 
-    await bucketRef.file(filePath).download({ destination: tempFile });
+    const originalName = parts[parts.length - 1]; // capa.jpg
+    const tmpOriginal = `/tmp/${produtoId}-${originalName}`;
+    const tmpThumb = `/tmp/${produtoId}-thumb.jpg`;
 
-    await sharp(tempFile)
+    // baixa original
+    await bucketRef.file(filePath).download({ destination: tmpOriginal });
+
+    // gera thumb
+    await sharp(tmpOriginal)
       .resize({ width: 300 })
       .jpeg({ quality: 70 })
-      .toFile(tempThumb);
+      .toFile(tmpThumb);
 
-    await bucketRef.upload(tempThumb, {
+    // sobe thumb em path fixo (mais simples)
+    const thumbPath = `produtos/${produtoId}/thumb.jpg`;
+
+    // token de download (pra gerar URL pública)
+    const token = crypto.randomUUID();
+
+    await bucketRef.upload(tmpThumb, {
       destination: thumbPath,
       metadata: {
-        contentType: "image/jpeg"
-      }
+        contentType: "image/jpeg",
+        metadata: {
+          firebaseStorageDownloadTokens: token,
+        },
+      },
     });
 
-    console.log("Thumbnail criada:", thumbPath);
+    // monta downloadURL
+    const encoded = encodeURIComponent(thumbPath);
+    const fotoThumbUrl =
+      `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encoded}?alt=media&token=${token}`;
+
+    // grava no Firestore
+    await db.collection("produtos").doc(produtoId).set(
+      {
+        fotoThumbUrl,
+        thumbPath,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    console.log("Thumbnail criada + Firestore atualizado:", produtoId);
   }
 );
