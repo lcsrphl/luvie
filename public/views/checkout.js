@@ -97,13 +97,24 @@ if (!email) {
           const resp = await fetch(window.__API_BASE_URL__ + "/processPayment", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ...formData,
-              transaction_amount: Number(amount || 0),
-              payer: { ...formData.payer, email },
-              description: "Pedido Luviê",
-              external_reference: order.pedidoId || "",
-            }),
+            const payload = {
+  payment_method_id: formData.payment_method_id,
+  transaction_amount: Number(amount || 0),
+  description: "Pedido Luviê",
+  external_reference: order.pedidoId || "",
+  payer: { email },
+
+  // cartão (só se vier)
+  token: formData.token,
+  issuer_id: formData.issuer_id,
+  installments: formData.installments,
+};
+
+const resp = await fetch(window.__API_BASE_URL__ + "/processPayment", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload),
+});
           });
 
           if (!resp.ok) throw new Error(await resp.text());
