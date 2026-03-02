@@ -302,31 +302,27 @@ if (!payerEmail) {
       payment_method_id,
     });
   } catch (err) {
-  // Log completo no Cloud Logging
-  console.error("processPayment error:", {
-    message: err?.message,
-    name: err?.name,
-    status: err?.status,
-    cause: err?.cause,
-    response: err?.response,
-    stack: err?.stack,
-  });
+  console.error("processPayment error raw:", err);
 
-  // tenta extrair erro do Mercado Pago em vários formatos
-  const mp =
-    err?.cause?.[0] ||
+  const status = err?.status || err?.response?.status || 400;
+
+  // pega possíveis formatos do SDK do Mercado Pago
+  const mpRaw =
+    (Array.isArray(err?.cause) ? err.cause : null) ||
     err?.cause ||
     err?.response?.data ||
     err?.response ||
     null;
 
-  // Se veio algo estruturado do MP, devolve isso pro front (pra você enxergar)
-  if (mp) {
-    return res.status(400).json({
-      error: "mp_error",
-      mp,
-    });
-  }
+  // se for array, só usa se tiver itens (evita mp: [])
+  const mp = Array.isArray(mpRaw) ? (mpRaw.length ? mpRaw : null) : mpRaw;
+
+  return res.status(status).json({
+    error: "mp_error",
+    message: err?.message || "Mercado Pago error",
+    mp, // pode vir null e tá tudo bem
+  });
+}
 
   // fallback
   return res.status(500).json({
