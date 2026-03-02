@@ -183,8 +183,10 @@ app.post("/processPayment", async (req, res) => {
     }
 
     // ✅ fallback de email (não quebra UX)
-    const payerEmail =
-      payer?.email || `cliente_${external_reference || Date.now()}@luvie.local`;
+    const payerEmail = (payer?.email || "").trim().toLowerCase();
+if (!payerEmail) {
+  return res.status(400).json({ error: "payer.email obrigatório" });
+}
 
     const paymentApi = new Payment(mpClient());
 
