@@ -258,11 +258,18 @@ if (!payerEmail) {
         description: description || "Pedido Luviê",
         external_reference: external_reference || undefined,
         payer: {
-          email: payerEmail,
-          first_name: payer?.first_name || undefined,
-          last_name: payer?.last_name || undefined,
-          identification: payer?.identification || undefined,
+  email: payerEmail,
+  ...(payer?.first_name ? { first_name: payer.first_name } : {}),
+  ...(payer?.last_name ? { last_name: payer.last_name } : {}),
+  ...(payer?.identification?.type && payer?.identification?.number
+    ? {
+        identification: {
+          type: payer.identification.type,
+          number: payer.identification.number,
         },
+      }
+    : {}),
+},
         // ⚠️ NÃO colocar notification_url aqui (Payment.create)
         metadata: { pedidoId: external_reference || "" },
       },
