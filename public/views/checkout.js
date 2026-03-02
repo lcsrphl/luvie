@@ -130,10 +130,18 @@ if (!email) {
 
           return data;
         } catch (e) {
-          console.error(e);
-          payMsg.textContent = "Falha ao processar pagamento. Veja o console.";
-          throw e;
-        }
+  console.error("processPayment failed:", e);
+
+  let msg = "Falha ao processar pagamento.";
+
+  try {
+    const parsed = JSON.parse(e.message);
+    if (parsed?.error) msg = parsed.error;
+  } catch {}
+
+  payMsg.textContent = msg;
+  throw e;
+}
       },
 
       onError: (error) => {
