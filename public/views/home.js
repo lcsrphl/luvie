@@ -64,7 +64,7 @@ mount.querySelector("#navPedidos").addEventListener("click", () => navigate("/pe
     card.type = "button";
     card.innerHTML = `
       <div class="thumb">
-        ${p.fotoUrl ? `<img src="${p.fotoUrl}" alt="${p.titulo}">` : `<div class="plus">?</div>`}
+        ${p.fotoThumbUrl || p.fotoUrl ? `<img src="${p.fotoThumbUrl || p.fotoUrl}" alt="${p.titulo}">` : `<div class="plus">?</div>`}
       </div>
       <div class="meta">
         <p class="name">${escapeHtml(p.titulo || "")}</p>
