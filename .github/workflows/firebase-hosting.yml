@@ -19,8 +19,8 @@ jobs:
 
       # ✅ instala dependências das functions
       - name: Install Functions deps
-        working-directory: functions
-        run: npm ci || npm install
+  working-directory: functions
+  run: npm install --no-audit --no-fund --omit=dev
 
       # ✅ deploya hosting + functions
       - name: Deploy to Firebase (Hosting + Functions)
