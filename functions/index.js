@@ -32,18 +32,23 @@ const PUBLIC_FUNCTIONS_BASE_URL =
  * (evita erro por whitespace/aspas copiadas no Secret)
  */
 function mpClient() {
-  let token = MP_ACCESS_TOKEN.value();
-  if (!token) throw new Error("MP_ACCESS_TOKEN não configurado.");
+  // 1) tenta via env normal
+  let token = process.env.MP_ACCESS_TOKEN || "";
 
-  // sanitiza token: trim + remove aspas acidentais
+  // 2) tenta via Secret Param (se estiver montado)
+  if (!token) {
+    try { token = MP_ACCESS_TOKEN.value() || ""; } catch {}
+  }
+
   token = String(token).trim().replace(/^"+|"+$/g, "");
 
-  // log seguro (não vaza token inteiro)
+  if (!token) throw new Error("MP_ACCESS_TOKEN não configurado.");
+
   console.log("MP token prefix:", token.slice(0, 10), "len:", token.length);
 
   return new MercadoPagoConfig({
     accessToken: token,
-    options: { timeout: 15000 }, // evita travar muito tempo
+    options: { timeout: 15000 },
   });
 }
 
