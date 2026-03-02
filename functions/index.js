@@ -3,13 +3,16 @@ import cors from "cors";
 import admin from "firebase-admin";
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
+import { onObjectFinalized } from "firebase-functions/v2/storage";
+import sharp from "sharp";
+import { Storage } from "@google-cloud/storage";
 
 // SDK Mercado Pago
 import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
 
 admin.initializeApp();
 const db = admin.firestore();
-
+const storage = new Storage();
 const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
@@ -334,4 +337,41 @@ export const api = onRequest(
     secrets: [MP_ACCESS_TOKEN, MP_WEBHOOK_SECRET],
   },
   app
+);
+
+export const generateProductThumb = onObjectFinalized(
+  { region: "us-central1" },
+  async (event) => {
+    const filePath = event.data.name;
+    const bucket = event.data.bucket;
+
+    if (!filePath.startsWith("produtos/")) return;
+    if (filePath.includes("_thumb")) return;
+
+    const fileName = filePath.split("/").pop();
+    const thumbPath = filePath.replace(
+      fileName,
+      fileName.replace(".", "_thumb.")
+    );
+
+    const bucketRef = storage.bucket(bucket);
+    const tempFile = `/tmp/${fileName}`;
+    const tempThumb = `/tmp/thumb-${fileName}`;
+
+    await bucketRef.file(filePath).download({ destination: tempFile });
+
+    await sharp(tempFile)
+      .resize({ width: 300 })
+      .jpeg({ quality: 70 })
+      .toFile(tempThumb);
+
+    await bucketRef.upload(tempThumb, {
+      destination: thumbPath,
+      metadata: {
+        contentType: "image/jpeg"
+      }
+    });
+
+    console.log("Thumbnail criada:", thumbPath);
+  }
 );
