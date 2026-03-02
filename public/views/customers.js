@@ -117,7 +117,8 @@ if (!cliente?.email) return alert("Cliente sem e-mail. Edite/cadastre novamente.
   titulo: p.titulo || "",
   preco: Number(p.preco || 0),
   qtd: 1,
-  fotoUrl: p.fotoUrl || "" // ✅ salva a foto no pedido
+  fotoThumbUrl: p.fotoThumbUrl || "",   // ✅
+  fotoUrl: p.fotoUrl || ""              // opcional fallback
 }));
 
     const total = itens.reduce((sum, it) => sum + (it.preco * (it.qtd || 1)), 0);
