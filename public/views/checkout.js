@@ -90,70 +90,71 @@ if (!email) {
       },
 
       onSubmit: async ({ formData }) => {
-        const payMsg = mount.querySelector("#payMsg");
-        payMsg.textContent = "Processando pagamento…";
-
-        try {
-          const resp = await fetch(window.__API_BASE_URL__ + "/processPayment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            const payload = {
-  payment_method_id: formData.payment_method_id,
-  transaction_amount: Number(amount || 0),
-  description: "Pedido Luviê",
-  external_reference: order.pedidoId || "",
-  payer: { email },
-
-  // cartão (só se vier)
-  token: formData.token,
-  issuer_id: formData.issuer_id,
-  installments: formData.installments,
-};
-
-const resp = await fetch(window.__API_BASE_URL__ + "/processPayment", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(payload),
-});
-          });
-
-          if (!resp.ok) throw new Error(await resp.text());
-          const data = await resp.json();
-
-          // ✅ PIX: troca o Brick pela tela Pix
-          if (data.payment_method_id === "pix" && data.pix?.qr_code) {
-            await showPixFlow(mount, {
-              paymentId: data.id,
-              qr_code: data.pix.qr_code,
-              expiresAt: data.expiresAt,
-            });
-            return data;
-          }
-
-          // ✅ cartão (mostra status_detail pra debug)
-          if (data.status === "approved") {
-            payMsg.textContent = "Pagamento aprovado ✅";
-          } else if (data.status === "pending") {
-            payMsg.textContent = `Pagamento pendente ⏳ (${data.status_detail || "aguardando"})`;
-          } else {
-            payMsg.textContent = `Pagamento não aprovado ❌ (${data.status_detail || "verifique os dados"})`;
-          }
-
-          return data;
-        } catch (e) {
-  console.error("processPayment failed:", e);
-
-  let msg = "Falha ao processar pagamento.";
+  const payMsg = mount.querySelector("#payMsg");
+  payMsg.textContent = "Processando pagamento…";
 
   try {
-    const parsed = JSON.parse(e.message);
-    if (parsed?.error) msg = parsed.error;
-  } catch {}
+    // ✅ MONTA PAYLOAD (whitelist)
+    const payload = {
+      payment_method_id: formData.payment_method_id,
+      transaction_amount: Number(amount || 0),
+      description: "Pedido Luviê",
+      external_reference: order.pedidoId || order.id || "",
+      payer: { email },
 
-  payMsg.textContent = msg;
-  throw e;
-}
-      },
+      // cartão (só se vier)
+      token: formData.token,
+      issuer_id: formData.issuer_id,
+      installments: formData.installments,
+    };
+
+    // ✅ remove campos undefined (evita enviar lixo)
+    Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
+
+    const resp = await fetch(window.__API_BASE_URL__ + "/processPayment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!resp.ok) throw new Error(await resp.text());
+    const data = await resp.json();
+
+    // ✅ PIX: troca o Brick pela tela Pix
+    if (data.payment_method_id === "pix" && data.pix?.qr_code) {
+      await showPixFlow(mount, {
+        paymentId: data.id,
+        qr_code: data.pix.qr_code,
+        expiresAt: data.expiresAt,
+      });
+      return data;
+    }
+
+    // ✅ cartão
+    if (data.status === "approved") {
+      payMsg.textContent = "Pagamento aprovado ✅";
+    } else if (data.status === "pending") {
+      payMsg.textContent = `Pagamento pendente ⏳ (${data.status_detail || "aguardando"})`;
+    } else {
+      payMsg.textContent = `Pagamento não aprovado ❌ (${data.status_detail || "verifique os dados"})`;
+    }
+
+    return data;
+  } catch (e) {
+    console.error("processPayment failed:", e);
+
+    let msg = "Falha ao processar pagamento.";
+
+    try {
+      const parsed = JSON.parse(e.message);
+      if (parsed?.mp?.message) msg = parsed.mp.message;
+      else if (parsed?.error) msg = parsed.error;
+    } catch {}
+
+    payMsg.textContent = msg;
+    throw e;
+  }
+},
 
       onError: (error) => {
         console.error("Brick error:", error);
