@@ -295,9 +295,38 @@ if (!payerEmail) {
       payment_method_id,
     });
   } catch (err) {
-    console.error("processPayment error:", err);
-    return res.status(500).json({ error: String(err?.message || err) });
+  // Log completo no Cloud Logging
+  console.error("processPayment error:", {
+    message: err?.message,
+    name: err?.name,
+    status: err?.status,
+    cause: err?.cause,
+    response: err?.response,
+    stack: err?.stack,
+  });
+
+  // tenta extrair erro do Mercado Pago em vários formatos
+  const mp =
+    err?.cause?.[0] ||
+    err?.cause ||
+    err?.response?.data ||
+    err?.response ||
+    null;
+
+  // Se veio algo estruturado do MP, devolve isso pro front (pra você enxergar)
+  if (mp) {
+    return res.status(400).json({
+      error: "mp_error",
+      mp,
+    });
   }
+
+  // fallback
+  return res.status(500).json({
+    error: "internal_error",
+    message: String(err?.message || err),
+  });
+}
 });
 
 /**
