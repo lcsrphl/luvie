@@ -7,26 +7,33 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            functions/package-lock.json
+            package-lock.json
 
       - name: Install Firebase CLI
         run: npm i -g firebase-tools
 
-      # ✅ instala dependências das functions
-      - name: Install Functions deps
+      # ✅ instala deps das functions de forma reprodutível (usa package-lock)
+      - name: Install Functions deps (npm ci)
         working-directory: functions
-        run: npm install --no-audit --no-fund --omit=dev
+        run: npm ci --no-audit --no-fund
 
-      # ✅ deploya hosting + functions
+      # (opcional) se você tiver deps na raiz do projeto
+      # - name: Install root deps (npm ci)
+      #   run: npm ci --no-audit --no-fund
+
       - name: Deploy to Firebase (Hosting + Functions)
         env:
           SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          MP_ACCESS_TOKEN: ${{ secrets.MP_ACCESS_TOKEN }}
         run: |
           echo "$SERVICE_ACCOUNT_JSON" > /tmp/firebase-key.json
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-key.json
