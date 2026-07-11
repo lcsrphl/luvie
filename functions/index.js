@@ -235,7 +235,7 @@ app.post("/processPayment", async (req, res) => {
 
     // ✅ PIX
     if (payment_method_id === "pix") {
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
       const body = {
         transaction_amount: Number(transaction_amount),
