@@ -1,7 +1,6 @@
 import { db, storage } from "../firebase.js";
 import {
-  collection, addDoc, updateDoc, doc,
-  query, orderBy, onSnapshot, serverTimestamp
+  collection, addDoc, updateDoc, doc, deleteDoc, query, orderBy, onSnapshot, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
 import {
@@ -16,6 +15,12 @@ export function subscribeProducts(callback) {
     const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     callback(items);
   });
+}
+
+export async function deleteProduct(produtoId) {
+
+  await deleteDoc(doc(db, "produtos", produtoId));
+
 }
 
 export async function createProduct({ titulo, preco, file }) {
