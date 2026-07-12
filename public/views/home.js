@@ -59,9 +59,10 @@ mount.querySelector("#navPedidos").addEventListener("click", () => navigate("/pe
   const selected = new Set(getSelectedProducts());
 
   produtos.forEach(p => {
-    const card = document.createElement("button");
-    card.className = "card" + (selected.has(p.id) ? " selected" : "");
-    card.type = "button";
+    const card = document.createElement("div");
+card.className = "card" + (selected.has(p.id) ? " selected" : "");
+card.setAttribute("role", "button");
+card.setAttribute("tabindex", "0");
     card.innerHTML = `
   <button
     class="delete-product"
