@@ -19,7 +19,6 @@ export function renderNewProduct(mount) {
           id="foto"
           type="file"
           accept="image/*"
-          capture="environment"
           style="display:none"
         />
 
