@@ -1,5 +1,5 @@
 import { navigate } from "../router.js";
-import { subscribeProducts } from "../services/products.js";
+import { subscribeProducts, deleteProduct } from "../services/products.js";
 import { getSelectedProducts, toggleSelectedProduct, setSelectedProducts } from "../store.js";
 
 let unsubscribe = null;
@@ -63,14 +63,51 @@ mount.querySelector("#navPedidos").addEventListener("click", () => navigate("/pe
     card.className = "card" + (selected.has(p.id) ? " selected" : "");
     card.type = "button";
     card.innerHTML = `
-      <div class="thumb">
-        ${p.fotoThumbUrl || p.fotoUrl ? `<img src="${p.fotoThumbUrl || p.fotoUrl}" alt="${p.titulo}">` : `<div class="plus">?</div>`}
-      </div>
-      <div class="meta">
-        <p class="name">${escapeHtml(p.titulo || "")}</p>
-        <p class="price">R$ ${formatBRL(p.preco)}</p>
-      </div>
-    `;
+  <button
+    class="delete-product"
+    type="button"
+    aria-label="Excluir produto"
+  >
+    ×
+  </button>
+
+  <div class="thumb">
+    ${
+      p.fotoThumbUrl || p.fotoUrl
+        ? `<img src="${p.fotoThumbUrl || p.fotoUrl}" alt="${escapeHtml(p.titulo || "")}">`
+        : `<div class="plus">?</div>`
+    }
+  </div>
+
+  <div class="meta">
+    <p class="name">${escapeHtml(p.titulo || "")}</p>
+    <p class="price">R$ ${formatBRL(p.preco)}</p>
+  </div>
+`;
+
+const deleteButton = card.querySelector(".delete-product");
+
+deleteButton.addEventListener("click", async (event) => {
+  event.stopPropagation();
+
+  const confirmou = confirm(
+    `Excluir "${p.titulo || "este produto"}"?`
+  );
+
+  if (!confirmou) return;
+
+  try {
+    await deleteProduct(p.id);
+
+    const selecionados = getSelectedProducts()
+      .filter(id => id !== p.id);
+
+    setSelectedProducts(selecionados);
+  } catch (error) {
+    console.error("Erro ao excluir produto:", error);
+    alert("Não foi possível excluir o produto.");
+  }
+});
 
     card.addEventListener("click", () => {
       const ids = toggleSelectedProduct(p.id);
