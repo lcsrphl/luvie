@@ -1,5 +1,6 @@
 // public/views/checkout.js
 import { createCheckout } from "../services/payments.js";
+import { navigate } from "../router.js";
 
 export async function renderCheckout(mount, ctx) {
   const token = ctx?.query?.t || "";
@@ -131,16 +132,17 @@ if (!email) {
 
     if (data.payment_method_id === "pix" && data.pix?.qr_code) {
       await showPixFlow(mount, {
-        paymentId: data.id,
-        qr_code: data.pix.qr_code,
-        expiresAt: data.expiresAt,
-      });
+  paymentId: data.id,
+  qr_code: data.pix.qr_code,
+  expiresAt: data.expiresAt,
+  token,
+});
       return data;
     }
 
     if (data.status === "approved") {
-      payMsg.textContent = "Pagamento aprovado ✅";
-    } else if (data.status === "pending") {
+  showPaymentSuccess(mount, token);
+} else if (data.status === "pending") {
       payMsg.textContent = `Pagamento pendente ⏳ (${data.status_detail || "aguardando"})`;
     } else {
       payMsg.textContent = `Pagamento não aprovado ❌ (${data.status_detail || "verifique os dados"})`;
@@ -190,10 +192,49 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
+function showPaymentSuccess(mount, token) {
+  const container = mount.querySelector("#paymentBrick_container");
+  const payMsg = mount.querySelector("#payMsg");
+
+  if (payMsg) {
+    payMsg.textContent = "";
+  }
+
+  container.innerHTML = `
+    <div class="meta" style="text-align:center;">
+      <p class="name">
+        Pagamento efetuado com sucesso ✅
+      </p>
+
+      <p class="small" style="margin-top:8px;">
+        Seu pedido foi confirmado e já entrou em separação.
+      </p>
+
+      <button
+        id="btnRastrearPedido"
+        class="btn btn-primary"
+        type="button"
+        style="margin-top:16px;"
+      >
+        Rastrear entrega
+      </button>
+    </div>
+  `;
+
+  mount
+    .querySelector("#btnRastrearPedido")
+    .addEventListener("click", () => {
+      navigate(`/acompanhar?t=${encodeURIComponent(token)}`);
+    });
+}
+
 /**
  * Mostra Pix Copia e Cola + Timer + Polling de status
  */
-async function showPixFlow(mount, { paymentId, qr_code, expiresAt }) {
+async function showPixFlow(
+  mount,
+  { paymentId, qr_code, expiresAt, token }
+) {
   const container = mount.querySelector("#paymentBrick_container");
   const payMsg = mount.querySelector("#payMsg");
 
@@ -266,11 +307,10 @@ async function showPixFlow(mount, { paymentId, qr_code, expiresAt }) {
       const j = await r.json();
 
       if (j.status === "approved") {
-        clearInterval(poll);
-        clearInterval(t);
-        statusEl.textContent = "Pagamento efetuado com sucesso ✅";
-        timerEl.textContent = "Pago";
-      } else if (j.status === "rejected") {
+  clearInterval(poll);
+  clearInterval(t);
+  showPaymentSuccess(mount, token);
+} else if (j.status === "rejected") {
         clearInterval(poll);
         statusEl.textContent = `Pagamento rejeitado ❌ (${j.status_detail || "tente novamente"})`;
       }
