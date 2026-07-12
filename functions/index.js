@@ -156,12 +156,12 @@ app.post("/createCheckout", async (req, res) => {
 app.post("/webhookMercadoPago", async (req, res) => {
   try {
     const data = req.body?.data;
-
-    // responde rápido
-    res.status(200).send("ok");
-
+    
     const paymentId = data?.id;
-    if (!paymentId) return;
+
+    if (!paymentId) {
+      return res.status(200).send("sem paymentId");
+    }
 
     const paymentApi = new Payment(mpClient());
     const payment = await paymentApi.get({ id: paymentId });
@@ -186,8 +186,14 @@ app.post("/webhookMercadoPago", async (req, res) => {
       },
       { merge: true }
     );
+    console.log(
+      `Pedido ${pedidoId} atualizado para ${status}`
+      );
+      
+      return res.status(200).send("ok");
   } catch (err) {
     console.error("webhook error:", err);
+    return res.status(500).send("erro");
     // já respondeu 200 acima
   }
 });
@@ -243,6 +249,11 @@ app.post("/processPayment", async (req, res) => {
         payment_method_id: "pix",
         date_of_expiration: expiresAt,
         external_reference: external_reference || undefined,
+        
+        //acrescentei
+        notification_url:
+        `${PUBLIC_FUNCTIONS_BASE_URL}/webhookMercadoPago`,
+        
         payer: { email: payerEmail },
         metadata: { pedidoId: external_reference || "" },
       };
