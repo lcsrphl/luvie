@@ -54,6 +54,23 @@ body{
   cursor:pointer;
 }
 
+.delete-product {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 5;
+
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
 .thumb{
   height: 118px;
   background:#fafafa;
