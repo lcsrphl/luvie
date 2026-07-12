@@ -55,10 +55,66 @@ export async function renderOrderDetails(mount, ctx) {
     "R$ " + Number(pedido.total || 0).toFixed(2).replace(".", ",");
 
   mount.querySelector("#itens").innerHTML = (pedido.itens || []).map(it => {
-    const qtd = Number(it.qtd || 1);
-    const pr = Number(it.preco || 0);
-    return `<div>• ${escapeHtml(it.titulo)} — R$ ${pr.toFixed(2).replace(".", ",")} (x${qtd})</div>`;
-  }).join("");
+  const qtd = Number(it.qtd || 1);
+  const pr = Number(it.preco || 0);
+
+  const img =
+    it.fotoThumbUrl ||
+    it.fotoUrl ||
+    "";
+
+  return `
+    <div
+      style="
+        display:flex;
+        align-items:center;
+        gap:12px;
+        padding:10px 0;
+        border-bottom:1px solid rgba(0,0,0,0.08);
+      "
+    >
+      <div
+        style="
+          width:72px;
+          height:72px;
+          flex-shrink:0;
+          border-radius:10px;
+          overflow:hidden;
+          background:#f2f2f2;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+        "
+      >
+        ${
+          img
+            ? `
+              <img
+                src="${img}"
+                alt="${escapeHtml(it.titulo || "")}"
+                style="
+                  width:100%;
+                  height:100%;
+                  object-fit:cover;
+                "
+              >
+            `
+            : `<span style="font-size:12px;">Sem foto</span>`
+        }
+      </div>
+
+      <div style="flex:1;">
+        <div class="name">
+          ${escapeHtml(it.titulo || "Produto")}
+        </div>
+
+        <div class="small" style="margin-top:4px;">
+          R$ ${pr.toFixed(2).replace(".", ",")} • Quantidade: ${qtd}
+        </div>
+      </div>
+    </div>
+  `;
+}).join("");
 
   // por enquanto só “simula”
   mount.querySelector("#btnSep").addEventListener("click", () => {
