@@ -61,6 +61,9 @@ mount.querySelector("#navPedidos").addEventListener("click", () => navigate("/pe
   produtos.forEach(p => {
     const card = document.createElement("div");
 card.className = "card" + (selected.has(p.id) ? " selected" : "");
+
+card.style.position = "relative";
+
 card.setAttribute("role", "button");
 card.setAttribute("tabindex", "0");
     card.innerHTML = `
