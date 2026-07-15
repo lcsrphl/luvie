@@ -32,8 +32,40 @@ export function renderTracking(mount, ctx) {
       return;
     }
 
-    mount.querySelector("#title").textContent = "Pedido em separação ✅";
-    mount.querySelector("#msg").textContent =
-      `Olá ${pedido.clienteNome || "cliente"}, seu pedido foi confirmado e está sendo separado.`;
+    const statusConfig = {
+  paid: {
+    title: "Pedido em separação ✅",
+    message:
+      "Seu pagamento foi confirmado e estamos separando seus produtos.",
+  },
+
+  awaiting_shipping: {
+    title: "Pedido aguardando envio 📦",
+    message:
+      "Seu pedido já foi separado e embalado. Agora ele está aguardando o envio.",
+  },
+
+  shipped: {
+    title: "Pedido enviado 🚚",
+    message:
+      "Seu pedido já foi enviado e está a caminho.",
+  },
+
+  delivered: {
+    title: "Pedido entregue ✅",
+    message:
+      "Seu pedido foi marcado como entregue.",
+  },
+};
+
+const currentStatus =
+  statusConfig[pedido.status] ||
+  statusConfig.paid;
+
+mount.querySelector("#title").textContent =
+  currentStatus.title;
+
+mount.querySelector("#msg").textContent =
+  `Olá ${pedido.clienteNome || "cliente"}, ${currentStatus.message}`;
   });
 }
