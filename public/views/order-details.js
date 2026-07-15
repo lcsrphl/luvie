@@ -21,7 +21,7 @@ export async function renderOrderDetails(mount, ctx) {
 
       <div class="row">
         <button class="btn btn-ghost" id="btnVoltar">Voltar</button>
-        <button class="btn btn-primary" id="btnSep">Marcar “em separação”</button>
+        <button class="btn btn-primary" id="btnSep">Carregando...</button>
       </div>
     </main>
 
