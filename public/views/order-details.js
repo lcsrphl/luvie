@@ -20,9 +20,10 @@ export async function renderOrderDetails(mount, ctx) {
       <div style="height:12px;"></div>
 
       <div class="row">
-        <button class="btn btn-ghost" id="btnVoltar">Voltar</button>
-        <button class="btn btn-primary" id="btnSep">Carregando...</button>
-      </div>
+  <button class="btn btn-ghost" id="btnVoltar">Voltar</button>
+  <button class="btn btn-ghost" id="btnTracking">Ver como cliente</button>
+  <button class="btn btn-primary" id="btnSep">Carregando...</button>
+</div>
     </main>
 
     <nav class="nav">
@@ -48,6 +49,18 @@ export async function renderOrderDetails(mount, ctx) {
     mount.querySelector("#cliente").textContent = "Pedido não encontrado.";
     return;
   }
+  
+  mount.querySelector("#btnTracking").addEventListener("click", () => {
+  if (!pedido.publicToken) {
+    alert("Este pedido não possui link de rastreio.");
+    return;
+  }
+
+  window.open(
+    `${window.location.origin}/#/acompanhar?t=${encodeURIComponent(pedido.publicToken)}`,
+    "_blank"
+  );
+});
 
   mount.querySelector("#cliente").textContent = pedido.clienteNome || "Cliente";
 
