@@ -61,6 +61,15 @@ export function subscribePaidOrders(callback) {
   });
 }
 
+export async function updateOrderStatus(pedidoId, status) {
+  const ref = doc(db, "pedidos", pedidoId);
+
+  await updateDoc(ref, {
+    status,
+    updatedAt: serverTimestamp(),
+  });
+}
+
 // ✅ DETALHE
 export async function getOrderById(pedidoId) {
   const ref = doc(db, "pedidos", pedidoId);
