@@ -1,5 +1,5 @@
 import { navigate } from "../router.js";
-import { getOrderById } from "../services/orders.js";
+import { getOrderById, updateOrderStatus } from "../services/orders.js";
 
 export async function renderOrderDetails(mount, ctx) {
   const id = ctx?.query?.id || "";
