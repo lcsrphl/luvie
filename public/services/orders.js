@@ -2,7 +2,7 @@ import { db } from "../firebase.js";
 import {
   collection, addDoc, serverTimestamp,
   query, where, orderBy, onSnapshot,
-  doc, getDoc
+  doc, getDoc, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
 const pedidosCol = collection(db, "pedidos");
