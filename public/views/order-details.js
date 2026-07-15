@@ -117,9 +117,72 @@ export async function renderOrderDetails(mount, ctx) {
 }).join("");
 
   // por enquanto só “simula”
-  mount.querySelector("#btnSep").addEventListener("click", () => {
-    alert("Depois a gente salva no Firestore: statusSeparacao = true / etapa = separacao");
-  });
+  const btnStatus = mount.querySelector("#btnSep");
+
+const statusConfig = {
+  paid: {
+    buttonText: "Separado e embalado",
+    nextStatus: "awaiting_shipping",
+  },
+
+  awaiting_shipping: {
+    buttonText: "Marcar como enviado",
+    nextStatus: "shipped",
+  },
+
+  shipped: {
+    buttonText: "Marcar como entregue",
+    nextStatus: "delivered",
+  },
+
+  delivered: {
+    buttonText: "Pedido entregue",
+    nextStatus: null,
+  },
+};
+
+let statusAtual = pedido.status || "paid";
+
+function atualizarBotao() {
+  const config =
+    statusConfig[statusAtual] ||
+    statusConfig.paid;
+
+  btnStatus.textContent = config.buttonText;
+
+  if (!config.nextStatus) {
+    btnStatus.disabled = true;
+  }
+}
+
+atualizarBotao();
+
+btnStatus.addEventListener("click", async () => {
+  const config =
+    statusConfig[statusAtual] ||
+    statusConfig.paid;
+
+  if (!config.nextStatus) return;
+
+  btnStatus.disabled = true;
+  btnStatus.textContent = "Salvando...";
+
+  try {
+    await updateOrderStatus(id, config.nextStatus);
+
+    statusAtual = config.nextStatus;
+    atualizarBotao();
+
+    alert("Status do pedido atualizado.");
+  } catch (error) {
+    console.error("Erro ao atualizar pedido:", error);
+
+    btnStatus.disabled = false;
+    atualizarBotao();
+
+    alert("Não foi possível atualizar o pedido.");
+  }
+});
 }
 
 function escapeHtml(str){
