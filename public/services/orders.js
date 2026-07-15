@@ -51,12 +51,21 @@ export async function createOrder({ cliente, itens, total }) {
 export function subscribePaidOrders(callback) {
   const q = query(
     pedidosCol,
-    where("status", "==", "paid"),
     orderBy("updatedAt", "desc")
   );
 
+  const statusAtivos = [
+    "paid",
+    "awaiting_shipping",
+    "shipped",
+    "delivered"
+  ];
+
   return onSnapshot(q, (snap) => {
-    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const items = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(pedido => statusAtivos.includes(pedido.status));
+
     callback(items);
   });
 }
